@@ -4,12 +4,30 @@ open Cohttp
 open Cohttp_async
 open Types
 
+module Github_creds = struct
+  type t =
+    { client_id : string
+    ; client_secret : string
+    }
+  [@@deriving sexp]
+
+  let to_auth_string { client_id; client_secret } =
+    let b64creds = Base64.encode_exn [%string "%{client_id}:%{client_secret}"] in
+    [%string "Basic %{b64creds}"]
+  ;;
+end
+
 let post_comment repo pr contents =
+  let%bind creds =
+    Reader.load_sexp "creds.sexp" Github_creds.t_of_sexp >>| Or_error.ok_exn
+  in
   let endpoint =
     [%string
       "https://api.github.com/repos/%{repo#Repo_id}/issues/%{pr#Pull_request_id}/comments"]
   in
-  let headers = Header.add (Header.init ()) "Accept" "application/vnd.github.v3+json" in
+  let headers = Header.init () in
+  let headers = Header.add headers "Accept" "application/vnd.github.v3+json" in
+  let headers = Header.add headers "Authorization" (Github_creds.to_auth_string creds) in
   let body = Body.of_string [%string "{\"body\":\"%{contents}\"}"] in
   let%bind resp, _resp_body = Client.post ~headers ~body (Uri.of_string endpoint) in
   let status = Response.status resp in
