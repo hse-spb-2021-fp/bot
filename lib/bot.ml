@@ -2,13 +2,35 @@ open Core
 open Async
 open Cohttp
 open Cohttp_async
+open Types
+
+let post_comment repo pr contents =
+  let endpoint =
+    [%string
+      "https://api.github.com/repos/%{repo#Repo_id}/issues/%{pr#Pull_request_id}/comments"]
+  in
+  let headers = Header.add (Header.init ()) "Accept" "application/vnd.github.v3+json" in
+  let body = Body.of_string [%string "{\"body\":\"%{contents}\"}"] in
+  let%bind resp, _resp_body = Client.post ~headers ~body (Uri.of_string endpoint) in
+  let status = Response.status resp in
+  Log.Global.info_s [%message "response" (status : Code.status_code)];
+  Deferred.unit
+;;
 
 let process_hook body _req =
   let%bind body = Body.to_string body in
-  (match Event.of_string body with
-  | Ok (Pull_request pr) ->
-    Log.Global.info_s [%message "Pull request" (pr : Event.Pull_request.t)]
-  | Error e -> Log.Global.error_s [%message "Error" (e : Error.t)]);
+  let%bind () =
+    match Event.of_string body with
+    | Ok (Pull_request pr) ->
+      Log.Global.info_s [%message "Pull request" (pr : Event.Pull_request.t)];
+      post_comment
+        pr.Event.Pull_request.repo
+        pr.Event.Pull_request.pull_request
+        "I see your PR!"
+    | Error e ->
+      Log.Global.error_s [%message "Error" (e : Error.t)];
+      Deferred.unit
+  in
   Server.respond_string "<h1>Hello from fp.vasalf.net</h1>"
 ;;
 
