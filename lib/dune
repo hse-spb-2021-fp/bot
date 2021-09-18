@@ -1,6 +1,6 @@
 (library
  (inline_tests)
  (name bot)
- (libraries base core async cohttp cohttp-async)
+ (libraries base core async cohttp cohttp-async yojson)
  (preprocess
   (pps ppx_inline_test ppx_jane)))
