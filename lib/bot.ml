@@ -8,6 +8,7 @@ let process_hook body _req =
   (match Event.of_string body with
   | Ok (Pull_request pr) ->
     Log.Global.info_s [%message "Pull request" (pr : Event.Pull_request.t)]
+  | Ok (Push push) -> Log.Global.info_s [%message "Push" (push : Event.Push.t)]
   | Error e -> Log.Global.error_s [%message "Error" (e : Error.t)]);
   Server.respond_string "<h1>Hello from fp.vasalf.net</h1>"
 ;;
