@@ -26,6 +26,7 @@ let of_string s =
       in
       let branch =
         json
+        |> Util.member "pull_request"
         |> Util.member "head"
         |> Util.member "ref"
         |> Util.to_string
