@@ -80,6 +80,7 @@ let process_hook body _req =
 let server =
   let%map_open.Command () = return () in
   fun () ->
+    Mirage_crypto_rng_unix.initialize ();
     let callback ~body addr req =
       let uri = Request.uri req in
       let meth = Request.meth req in

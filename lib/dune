@@ -1,6 +1,6 @@
 (library
  (inline_tests)
  (name bot)
- (libraries base core async cohttp cohttp-async yojson async_ssl base64 jose nocrypto x509)
+ (libraries base core async cohttp cohttp-async yojson async_ssl base64 jose nocrypto x509 mirage-crypto-rng.unix)
  (preprocess
   (pps ppx_inline_test ppx_jane)))
