@@ -36,7 +36,8 @@ let of_string s =
         json
         |> Util.member "pull_request"
         |> Util.member "number"
-        |> Util.to_string
+        |> Util.to_int
+        |> Int.to_string
         |> Pull_request_id.of_string
       in
       let name =
