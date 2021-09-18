@@ -1,0 +1,6 @@
+(executable
+ (public_name bot)
+ (name main)
+ (libraries bot base core async cohttp)
+ (preprocess
+  (pps ppx_jane)))

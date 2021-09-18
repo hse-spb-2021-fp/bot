@@ -1,0 +1,6 @@
+(library
+ (inline_tests)
+ (name bot)
+ (libraries base core async cohttp)
+ (preprocess
+  (pps ppx_inline_test ppx_jane)))

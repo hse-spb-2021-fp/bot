@@ -1,0 +1,5 @@
+(test
+ (name bot)
+ (libraries base core async cohttp)
+ (preprocess
+  (pps ppx_jane)))
