@@ -25,11 +25,10 @@ type t =
 [@@deriving sexp]
 
 let of_string s =
-  let open Or_error.Let_syntax in
   let open Yojson.Safe in
-  let%bind json = Or_error.try_with (fun () -> from_string s) in
   let pr =
     Or_error.try_with (fun () ->
+        let json = from_string s in
         let repo =
           json
           |> Util.member "repository"
@@ -60,6 +59,7 @@ let of_string s =
   in
   let push =
     Or_error.try_with (fun () ->
+        let json = from_string s in
         let repo =
           json
           |> Util.member "repository"
