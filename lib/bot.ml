@@ -82,6 +82,62 @@ let process_hook sink body _req =
   Server.respond_string "<h1>Hello from fp.vasalf.net</h1>"
 ;;
 
+let status pg_conn repo branch task =
+  let result = ref None in
+  let%bind () =
+    Postgres_async.query
+      pg_conn
+      [%string
+        "SELECT result FROM fp_results WHERE repo = '%{repo#Repo_id}' AND branch = \
+         '%{branch#Branch_id}' AND task = '%{task#Task_id}' ORDE BY id DESC LIMIT 1;"]
+      ~handle_row:(fun ~column_names:_ ~values -> result := Array.get values 0)
+    >>| Or_error.ok_exn
+  in
+  return !result
+;;
+
+let status_table pg_conn repo =
+  let%bind tasks = Lazy.force Runner.list_tasks in
+  let task_row branch task =
+    let%bind result = status pg_conn repo branch task in
+    let result = Sexp.to_string (Option.sexp_of_t String.sexp_of_t result) in
+    return
+      [%string
+        "<tr><td>%{branch#Branch_id}</td><td>%{task#Task_id}</td><td>%{result}</td></tr>"]
+  in
+  let header = [%string "<h2>%{repo#Repo_id}</h2>"] in
+  let thead = "<tr><th>HW</th><th>Task</th><th>Result</th></tr>" in
+  let%bind rows =
+    tasks
+    |> Map.to_alist
+    |> List.map ~f:(fun (branch, tasks) -> List.map tasks ~f:(fun task -> branch, task))
+    |> List.concat
+    |> Deferred.List.map ~f:(fun (branch, task) -> task_row branch task)
+    >>| String.concat
+  in
+  return [%string "%{header}<table><thead>%{thead}</thead><tbody>%{rows}</tbody></table>"]
+;;
+
+let seen_repos pg_conn =
+  let result = ref [] in
+  let%bind () =
+    Postgres_async.query
+      pg_conn
+      "SELECT DISTINCT repo FROM fp_results ORDER BY repo;"
+      ~handle_row:(fun ~column_names:_ ~values ->
+        result := Repo_id.of_string (Option.value_exn (Array.get values 0)) :: !result)
+    >>| Or_error.ok_exn
+  in
+  return !result
+;;
+
+let process_home pg_conn =
+  seen_repos pg_conn
+  >>= Deferred.List.map ~f:(status_table pg_conn)
+  >>| String.concat
+  >>= Server.respond_string
+;;
+
 let server =
   let%map_open.Command () = return () in
   fun () ->
@@ -106,7 +162,7 @@ let server =
         [%message (addr : Socket.Address.Inet.t) (Uri.to_string uri) (meth : Code.meth)];
       match Uri.path uri with
       | "/hook" -> process_hook sink_writer body req
-      | "/" -> Server.respond_string "<h1>Hello from fp.vasalf.net</h1>"
+      | "/" -> process_home pg_conn
       | _ -> Server.respond_string "404"
     in
     let where_to_listen = Tcp.Where_to_listen.of_port 8179 in
