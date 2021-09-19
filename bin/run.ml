@@ -1,1 +1,1 @@
-let () = Core.Command.run Bot.Runner.command
+let () = Core.Command.run Bot.Run.command

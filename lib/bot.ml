@@ -3,7 +3,7 @@ open Async
 open Cohttp
 open Cohttp_async
 open Types
-module Runner = Runner
+module Run = Run
 
 module Github_creds = struct
   type t = { iss : int } [@@deriving sexp]

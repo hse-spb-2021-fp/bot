@@ -2,24 +2,6 @@ open Core
 open Async
 open! Types
 
-module Run_id = struct
-  include
-    String_id.Make
-      (struct
-        let module_name = "Run_id"
-      end)
-      ()
-
-  let generate () = of_string (Uuid.to_string (Uuid_unix.create ()))
-end
-
-module Task_id =
-  String_id.Make
-    (struct
-      let module_name = "Task_id"
-    end)
-    ()
-
 let exec ~prog ~argv ~stdout ~stderr () =
   let argv = List.concat [ [ "bash"; "./run_output.sh"; prog; stdout; stderr ]; argv ] in
   Log.Global.info_s [%message "run" ~prog:"bash" (argv : string list)];
@@ -118,7 +100,7 @@ let run_task temp_dir _repo_id branch_id task_id =
     in
     return ()
   in
-  Deferred.return (run_id, result)
+  Deferred.return (task_id, run_id, result)
 ;;
 
 let rec remove_recursive path =
@@ -142,17 +124,3 @@ let run repo_id branch_id =
   let%bind () = remove_recursive temp_dir in
   return ret
 ;;
-
-let main =
-  let%map_open.Command () = return ()
-  and repo = flag "-repo" (required string) ~doc:"repository name"
-  and branch = flag "-branch" (required string) ~doc:"branch name" in
-  fun () ->
-    let repo_id = Repo_id.of_string repo in
-    let branch_id = Branch_id.of_string branch in
-    let%bind runs = run repo_id branch_id in
-    print_s [%message (runs : (Run_id.t * unit Or_error.t) list)];
-    return ()
-;;
-
-let command = Command.async ~summary:"Run an invocation" main

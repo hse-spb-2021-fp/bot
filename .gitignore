@@ -29,5 +29,6 @@ setup.log
 _opam/
 
 creds.sexp
+pgcreds.sexp
 logs/
 tasks/
