@@ -144,7 +144,7 @@ let pack s =
   in
   let head = [%string "<title>fp.vasalf.net</title>%{bootstrap}</head>"] in
   let body = [%string "<div class=\"container\">%{s}</div>"] in
-  [%string "<!doctype html5><html>%{head}<head><body>%{body}</body></html>"]
+  [%string "<!doctype html5><html>%{head}</head><body>%{body}</body></html>"]
 ;;
 
 let process_home pg_conn =
