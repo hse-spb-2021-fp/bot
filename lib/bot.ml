@@ -131,10 +131,15 @@ let seen_repos pg_conn =
   return !result
 ;;
 
+let pack s =
+  [%string "<html><head><title>fp.vasalf.net</title></head><body>%{s}</body></html>"]
+;;
+
 let process_home pg_conn =
   seen_repos pg_conn
   >>= Deferred.List.map ~f:(status_table pg_conn)
   >>| String.concat
+  >>| pack
   >>= Server.respond_string
 ;;
 
