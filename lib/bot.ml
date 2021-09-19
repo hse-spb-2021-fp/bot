@@ -62,16 +62,19 @@ let post_comment repo pr contents =
   Deferred.unit
 ;;
 
-let process_hook body _req =
+let process_hook sink body _req =
   let%bind body = Body.to_string body in
   let%bind () =
     match Event.of_string body with
     | Ok (Pull_request pr) ->
       Log.Global.info_s [%message "Pull request" (pr : Event.Pull_request.t)];
-      post_comment
-        pr.Event.Pull_request.repo
-        pr.Event.Pull_request.pull_request
-        "I see your PR!"
+      let%bind () =
+        post_comment
+          pr.Event.Pull_request.repo
+          pr.Event.Pull_request.pull_request
+          "I see your PR!"
+      in
+      Pipe.write sink (pr.Event.Pull_request.repo, pr.Event.Pull_request.branch)
     | Error e ->
       Log.Global.error_s [%message "Error" (e : Error.t)];
       Deferred.unit
@@ -83,14 +86,28 @@ let server =
   let%map_open.Command () = return () in
   fun () ->
     Mirage_crypto_rng_unix.initialize ();
+    let%bind pg_conn =
+      let%bind { Postgres_creds.username; password; database } =
+        Reader.with_file "pgcreds.sexp" ~f:(fun reader ->
+            Reader.contents reader >>| Sexp.of_string >>| Postgres_creds.t_of_sexp)
+      in
+      Postgres_async.connect ~user:username ~password ~database () >>| Or_error.ok_exn
+    in
+    let sink_reader, sink_writer = Pipe.create () in
+    let run_job =
+      Pipe.iter sink_reader ~f:(fun (repo, branch) ->
+          Run.run_and_report pg_conn repo branch)
+    in
+    ignore run_job;
     let callback ~body addr req =
       let uri = Request.uri req in
       let meth = Request.meth req in
       Log.Global.info_s
         [%message (addr : Socket.Address.Inet.t) (Uri.to_string uri) (meth : Code.meth)];
       match Uri.path uri with
-      | "/hook" -> process_hook body req
-      | _ -> Server.respond_string "<h1>Hello from fp.vasalf.net</h1>"
+      | "/hook" -> process_hook sink_writer body req
+      | "/" -> Server.respond_string "<h1>Hello from fp.vasalf.net</h1>"
+      | _ -> Server.respond_string "404"
     in
     let where_to_listen = Tcp.Where_to_listen.of_port 8179 in
     let%bind server = Server.create ~on_handler_error:`Raise where_to_listen callback in
