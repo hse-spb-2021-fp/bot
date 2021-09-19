@@ -13,8 +13,8 @@ let report pg_conn repo_id branch_id results =
         pg_conn
         [%string
           "INSERT INTO fp_results (repo, branch, task, run_id, result) VALUES \
-           (\"%{repo_id#Repo_id}\", \"%{branch_id#Branch_id}\", \"%{task_id#Task_id}\", \
-           \"%{run_id#Run_id}\", \"%{result}\");"]
+           ('%{repo_id#Repo_id}','%{branch_id#Branch_id}', '%{task_id#Task_id}', \
+           '%{run_id#Run_id}', '%{result}');"]
       >>| Or_error.ok_exn)
 ;;
 
