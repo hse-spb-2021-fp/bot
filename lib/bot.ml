@@ -54,6 +54,7 @@ let post_comment repo pr contents =
   let headers = Header.add headers "Accept" "application/vnd.github.v3+json" in
   let headers = Header.add headers "Authorization" auth_string in
   let body = Body.of_string [%string "{\"body\":\"%{contents}\"}"] in
+  Log.Global.info_s [%message (headers : Header.t) (body : Body.t)];
   let%bind resp, _resp_body = Client.post ~headers ~body (Uri.of_string endpoint) in
   let status = Response.status resp in
   Log.Global.info_s [%message "response" (status : Code.status_code)];
