@@ -1,6 +1,6 @@
-(executable
- (public_name bot)
- (name main)
+(executables
+ (names main run)
  (libraries bot base core async)
  (preprocess
   (pps ppx_jane)))
+
