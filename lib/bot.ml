@@ -89,7 +89,7 @@ let status pg_conn repo branch task =
       pg_conn
       [%string
         "SELECT result FROM fp_results WHERE repo = '%{repo#Repo_id}' AND branch = \
-         '%{branch#Branch_id}' AND task = '%{task#Task_id}' ORDE BY id DESC LIMIT 1;"]
+         '%{branch#Branch_id}' AND task = '%{task#Task_id}' ORDER BY id DESC LIMIT 1;"]
       ~handle_row:(fun ~column_names:_ ~values -> result := Array.get values 0)
     >>| Or_error.ok_exn
   in
@@ -123,7 +123,7 @@ let seen_repos pg_conn =
   let%bind () =
     Postgres_async.query
       pg_conn
-      "SELECT DISTINCT repo FROM fp_results;"
+      "SELECT DISTINCT repo FROM fp_results ORDER BY repo;"
       ~handle_row:(fun ~column_names:_ ~values ->
         result := Repo_id.of_string (Option.value_exn (Array.get values 0)) :: !result)
     >>| Or_error.ok_exn
