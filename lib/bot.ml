@@ -123,7 +123,7 @@ let seen_repos pg_conn =
   let%bind () =
     Postgres_async.query
       pg_conn
-      "SELECT DISTINCT repo FROM fp_results ORDER BY repo;"
+      "SELECT DISTINCT repo FROM fp_results;"
       ~handle_row:(fun ~column_names:_ ~values ->
         result := Repo_id.of_string (Option.value_exn (Array.get values 0)) :: !result)
     >>| Or_error.ok_exn
