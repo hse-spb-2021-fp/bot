@@ -115,7 +115,10 @@ let status_table pg_conn repo =
     |> Deferred.List.map ~f:(fun (branch, task) -> task_row branch task)
     >>| String.concat
   in
-  return [%string "%{header}<table><thead>%{thead}</thead><tbody>%{rows}</tbody></table>"]
+  return
+    [%string
+      "%{header}<table \
+       class=\"table\"><thead>%{thead}</thead><tbody>%{rows}</tbody></table>"]
 ;;
 
 let seen_repos pg_conn =
