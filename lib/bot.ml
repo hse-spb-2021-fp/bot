@@ -96,6 +96,14 @@ let status pg_conn repo branch task =
   return !result
 ;;
 
+module Compared_tasks = struct
+  type t =
+    { branch : Branch_id.t
+    ; task : Task_id.t
+    }
+  [@@deriving fields, compare]
+end
+
 let status_table pg_conn repo =
   let%bind tasks = Lazy.force Runner.list_tasks in
   let task_row branch task =
@@ -110,9 +118,11 @@ let status_table pg_conn repo =
   let%bind rows =
     tasks
     |> Map.to_alist
-    |> List.map ~f:(fun (branch, tasks) -> List.map tasks ~f:(fun task -> branch, task))
+    |> List.map ~f:(fun (branch, tasks) ->
+           List.map tasks ~f:(fun task -> Compared_tasks.Fields.create ~branch ~task))
     |> List.concat
-    |> Deferred.List.map ~f:(fun (branch, task) -> task_row branch task)
+    |> List.sort ~compare:Compared_tasks.compare
+    |> Deferred.List.map ~f:(fun { Compared_tasks.branch; task } -> task_row branch task)
     >>| String.concat
   in
   return

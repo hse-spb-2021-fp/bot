@@ -42,6 +42,7 @@ let git_clone temp_dir repo_id branch_id =
 let list_tasks =
   Lazy.from_fun (fun () ->
       Sys.ls_dir "tasks"
+      >>| List.filter ~f:(fun branch -> not String.(branch = ".git"))
       >>= Deferred.List.map ~f:(fun branch ->
               let branch_id = Branch_id.of_string branch in
               let%bind tasks =
