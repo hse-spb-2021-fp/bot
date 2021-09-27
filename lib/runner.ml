@@ -92,10 +92,10 @@ let run_task temp_dir _repo_id branch_id task_id =
     in
     let%bind () =
       exec
-        ~prog:executable_filename
-        ~argv:[]
-        ~stdout:[%string "logs/main-%{run_id#Run_id}.out.log"]
-        ~stderr:[%string "logs/main-%{run_id#Run_id}.err.log"]
+        ~prog:"bash"
+        ~argv:[ "./run_limits.sh"; executable_filename ]
+        ~stdout:[%string "logs/run_limits-%{run_id#Run_id}.out.log"]
+        ~stderr:[%string "logs/run_limits-%{run_id#Run_id}.err.log"]
         ()
     in
     return ()
