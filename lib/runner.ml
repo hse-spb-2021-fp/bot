@@ -42,6 +42,7 @@ let git_clone temp_dir repo_id branch_id =
 let list_tasks =
   Lazy.from_fun (fun () ->
       Sys.ls_dir "tasks"
+      >>| List.filter ~f:(fun branch -> not String.(branch = ".git"))
       >>= Deferred.List.map ~f:(fun branch ->
               let branch_id = Branch_id.of_string branch in
               let%bind tasks =
@@ -92,10 +93,10 @@ let run_task temp_dir _repo_id branch_id task_id =
     in
     let%bind () =
       exec
-        ~prog:executable_filename
-        ~argv:[]
-        ~stdout:[%string "logs/main-%{run_id#Run_id}.out.log"]
-        ~stderr:[%string "logs/main-%{run_id#Run_id}.err.log"]
+        ~prog:"bash"
+        ~argv:[ "./run_limits.sh"; executable_filename ]
+        ~stdout:[%string "logs/run_limits-%{run_id#Run_id}.out.log"]
+        ~stderr:[%string "logs/run_limits-%{run_id#Run_id}.err.log"]
         ()
     in
     let%bind () =
