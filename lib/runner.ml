@@ -98,6 +98,13 @@ let run_task temp_dir _repo_id branch_id task_id =
         ~stderr:[%string "logs/main-%{run_id#Run_id}.err.log"]
         ()
     in
+    let%bind () =
+      Reader.with_file [%string "logs/main-%{run_id#Run_id}.out.log"] ~f:(fun reader ->
+          let open Deferred.Let_syntax in
+          match%bind Reader.read_line reader with
+          | `Ok "0" -> return (Ok ())
+          | _ -> return (Or_error.error_s [%message "WA"]))
+    in
     return ()
   in
   Deferred.return (task_id, run_id, result)
