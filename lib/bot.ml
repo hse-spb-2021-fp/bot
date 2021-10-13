@@ -157,12 +157,14 @@ let pack s =
   [%string "<!doctype html5><html>%{head}</head><body>%{body}</body></html>"]
 ;;
 
+let home_headers = Header.init_with "Content-Type" "text/html; charset=UTF-8"
+
 let process_home pg_conn =
   seen_repos pg_conn
   >>= Deferred.List.map ~f:(status_table pg_conn)
   >>| String.concat
   >>| pack
-  >>= Server.respond_string
+  >>= Server.respond_string ~headers:home_headers
 ;;
 
 let server =
