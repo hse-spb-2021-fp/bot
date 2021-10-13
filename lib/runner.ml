@@ -100,7 +100,9 @@ let run_task temp_dir _repo_id branch_id task_id =
         ()
     in
     let%bind () =
-      Reader.with_file [%string "logs/main-%{run_id#Run_id}.out.log"] ~f:(fun reader ->
+      Reader.with_file
+        [%string "logs/run_limits-%{run_id#Run_id}.out.log"]
+        ~f:(fun reader ->
           let open Deferred.Let_syntax in
           match%bind Reader.read_line reader with
           | `Ok "0" -> return (Ok ())
